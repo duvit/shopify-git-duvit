@@ -31,10 +31,7 @@
           }
         }
       },
-      "block_order": [
-        "heading",
-        "button"
-      ],
+      "block_order": ["heading", "button"],
       "settings": {
         "image_overlay_opacity": 40,
         "image_height": "large",
@@ -46,6 +43,12 @@
         "mobile_content_alignment": "center",
         "stack_images_on_mobile": false,
         "show_text_below": false
+      }
+    },
+    "product-banner": {
+      "type": "banner-product",
+      "settings": {
+        "product_handle": "nike-air-max-plus"
       }
     },
     "featured_collection": {
@@ -77,8 +80,5 @@
       }
     }
   },
-  "order": [
-    "image_banner",
-    "featured_collection"
-  ]
+  "order": ["image_banner", "product-banner", "featured_collection"]
 }

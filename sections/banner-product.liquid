@@ -1,0 +1,173 @@
+{% comment %}
+  Product Banner Section
+{% endcomment %}
+
+{% if product %}
+  {% assign current_product = product %}
+{% elsif section.settings.product_handle != blank %}
+  {% assign current_product = all_products[section.settings.product_handle] %}
+{% endif %}
+
+{% if current_product %}
+  {% comment %}
+    {% for image in current_product.images %}
+      <img
+        src="{{ image | image_url }}"
+        alt="{{ image.alt }}"
+        width="200"
+        height="100%"
+      >
+    {% endfor %}
+  {% endcomment %}
+
+  <div class="product-banner">
+    <div class="product-card__gallery">
+      <div class="product-card__main-image">
+        {% comment %}
+          <span class="badge" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6.00004 9.07213L3.11574 10.6666L3.66671 7.28949L1.33337 4.89805L4.55789 4.40571L6.00004 1.33325L7.44219 4.40571L10.6667 4.89805L8.33337 7.28949L8.88435 10.6666L6.00004 9.07213Z" fill="#111111" stroke="#111111" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span class="badge-text">Highly Rated</span>
+          </span>
+        {% endcomment %}
+
+        {% if current_product.featured_image %}
+          <img
+            src="{{ current_product.featured_image | image_url: width: 536 }}"
+            {% if current_product.featured_image %}
+              alt="{{ current_product.featured_image.alt }}"
+            {%- else %}
+              alt="{{ current_product.title | default: '-' }}"
+            {% endif %}
+            width="536px"
+            height="536px"
+          >
+        {%- else %}
+          <img
+            src="{{ 'placeholder-image.png' | asset_url }}"
+            alt="{{ current_product.title | default: '-' }}"
+            width="536px"
+            height="536px"
+          >
+        {% endif %}
+      </div>
+
+      {% comment %}
+        <div class="product-card-swiper swiper swiper-initialized swiper-backface-hidden swiper-vertical">
+          <div
+            class="product-card-swiper-wrapper swiper-wrapper"
+            id="swiper-wrapper-5104ec11d53718af"
+            aria-live="polite"
+            style="transform: translate3d(0px, 0px, 0px);"
+          >
+            <div class="swiper-slide product-card-swiper-slide">
+              <img
+                src="./assets/products/colors-products/pink/image1.jpg"
+                alt="Nike Air Max Plus, right sneaker side view, pink"
+                class="thumb active"
+                data-index="0"
+                width="100"
+                height="200"
+              >
+            </div>
+          </div>
+          <span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span>
+        </div>
+      {% endcomment %}
+    </div>
+
+    <div class="product-card__info">
+      <h2 class="product-card__info-title text-h2" aria-live="polite">{{ current_product.title | default: '-' }}</h2>
+      <div class="product-card__info-price text-base" id="price">
+        {{ current_product.price | money_without_trailing_zeros }}
+      </div>
+      <div class="product-card__info-colors">
+        {% assign color_index = null %}
+
+        {% for option in current_product.options_with_values %}
+          {% if option.name == 'Color' %}
+            {% assign color_index = forloop.index0 %}
+          {% endif %}
+        {% endfor %}
+
+        {% assign colors_string = '' %}
+
+        {% for variant in current_product.variants %}
+          {% assign colors_string = colors_string | append: variant.options[color_index] | append: ',' %}
+        {% endfor %}
+
+        {% assign colors = colors_string | split: ',' | uniq %}
+
+        <ul>
+          {% for color in colors limit: 3 %}
+            {% assign available = false %}
+
+            {% for variant in current_product.variants %}
+              {% if variant.options[color_index] == color and variant.available %}
+                {% assign available = true %}
+              {% endif %}
+            {% endfor %}
+
+            <li>
+              {{ color }}
+              {% if available %}
+                <span style="color:green">(є в наявності)</span>
+              {% else %}
+                <span style="color:red">(нема)</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+
+        {% for color in current_product.options_by_name.color.values %}
+          <div class="color-container " data-index="0">
+            <img
+              class="color-img"
+              src="./assets/products/colors-products/black/image1.jpg"
+              alt="Choose color {{color}}"
+              width="100"
+              height="200"
+            >
+          </div>
+        {% endfor %}
+      </div>
+      <h3 class="product-card__info-sizes__title text-body-medium">Select Size:</h3>
+      <div class="product-card__info-sizes" role="group" aria-label="Available sizes" data-selected-size="UK 5.5">
+        {% for size in current_product.options_by_name['Shoe size'].values %}
+          <button
+            class="product-card__size-btn"
+            data-size="{{ size }}"
+            aria-label="Choose size {{ size }}"
+            aria-selected="true"
+            {% unless size %}
+              disabled
+            {% endunless %}
+          >
+            {{ size }}
+          </button>
+        {% endfor %}
+      </div>
+
+      <button class="button button--dark button--xl add-to-bag-btn" type="button" aria-label="Add product to bag">
+        Add To Bag
+      </button>
+      <p class="product-card__description">
+        {{ current_product.description }}
+      </p>
+    </div>
+  </div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Product Banner",
+  "settings": [
+    {
+      "type": "product",
+      "id": "product_handle",
+      "label": "Select product for banner"
+    }
+  ]
+}
+{% endschema %}
