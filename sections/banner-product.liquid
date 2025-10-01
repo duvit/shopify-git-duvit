@@ -1,159 +1,148 @@
-{% comment %}
-  Product Banner Section
-{% endcomment %}
+<script src="{{ 'color-selector.js' | asset_url }}" defer></script>
+{{ 'section-banner-product.css' | asset_url | stylesheet_tag }}
 
-{% if product %}
-  {% assign current_product = product %}
-{% elsif section.settings.product_handle != blank %}
+{% assign current_product = product %}
+{% if current_product == null and section.settings.product_handle != blank %}
   {% assign current_product = all_products[section.settings.product_handle] %}
 {% endif %}
 
-{% if current_product %}
-  {% comment %}
-    {% for image in current_product.images %}
-      <img
-        src="{{ image | image_url }}"
-        alt="{{ image.alt }}"
-        width="200"
-        height="100%"
-      >
-    {% endfor %}
-  {% endcomment %}
-
-  <div class="product-banner">
+{% if current_product == null %}
+  <div style="product-card__error">
+    {{
+      'sections.product_banner.error_no_product'
+      | t: default: 'Не вдалося отримати продукт. Перевірте handle у налаштуваннях.'
+    }}
+  </div>
+{% else %}
+  <div class="product-card">
     <div class="product-card__gallery">
       <div class="product-card__main-image">
-        {% comment %}
-          <span class="badge" aria-hidden="true">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6.00004 9.07213L3.11574 10.6666L3.66671 7.28949L1.33337 4.89805L4.55789 4.40571L6.00004 1.33325L7.44219 4.40571L10.6667 4.89805L8.33337 7.28949L8.88435 10.6666L6.00004 9.07213Z" fill="#111111" stroke="#111111" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-            <span class="badge-text">Highly Rated</span>
-          </span>
-        {% endcomment %}
-
         {% if current_product.featured_image %}
           <img
             src="{{ current_product.featured_image | image_url: width: 536 }}"
-            {% if current_product.featured_image %}
-              alt="{{ current_product.featured_image.alt }}"
-            {%- else %}
-              alt="{{ current_product.title | default: '-' }}"
-            {% endif %}
-            width="536px"
-            height="536px"
+            alt="{{ current_product.featured_image.alt | default: current_product.title }}"
+            width="536"
+            height="536"
           >
-        {%- else %}
+        {% else %}
           <img
             src="{{ 'placeholder-image.png' | asset_url }}"
             alt="{{ current_product.title | default: '-' }}"
-            width="536px"
-            height="536px"
+            width="536"
+            height="536"
           >
         {% endif %}
       </div>
-
-      {% comment %}
-        <div class="product-card-swiper swiper swiper-initialized swiper-backface-hidden swiper-vertical">
-          <div
-            class="product-card-swiper-wrapper swiper-wrapper"
-            id="swiper-wrapper-5104ec11d53718af"
-            aria-live="polite"
-            style="transform: translate3d(0px, 0px, 0px);"
-          >
-            <div class="swiper-slide product-card-swiper-slide">
-              <img
-                src="./assets/products/colors-products/pink/image1.jpg"
-                alt="Nike Air Max Plus, right sneaker side view, pink"
-                class="thumb active"
-                data-index="0"
-                width="100"
-                height="200"
-              >
-            </div>
-          </div>
-          <span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span>
-        </div>
-      {% endcomment %}
     </div>
 
     <div class="product-card__info">
-      <h2 class="product-card__info-title text-h2" aria-live="polite">{{ current_product.title | default: '-' }}</h2>
-      <div class="product-card__info-price text-base" id="price">
-        {{ current_product.price | money_without_trailing_zeros }}
-      </div>
-      <div class="product-card__info-colors">
-        {% assign color_index = null %}
+      <h2 class="product-card__title">{{ current_product.title | escape | default: '-' }}</h2>
 
+      {% assign first_variant = current_product.variants.first %}
+      {% capture price_block %}
+        {% if first_variant.compare_at_price > first_variant.price %}
+          <span class="price--sale">{{ first_variant.price | money_without_trailing_zeros }}</span>
+          <span class="price--compare" style="text-decoration: line-through; color: #888;">
+            {{ first_variant.compare_at_price | money_without_trailing_zeros }}
+          </span>
+        {% else %}
+          <span class="price">{{ first_variant.price | money_without_trailing_zeros }}</span>
+        {% endif %}
+      {% endcapture %}
+      <div id="product-price-block" class="product-card__info-price text-base">
+        {{ price_block }}
+      </div>
+
+      {% if current_product.options_by_name.color %}
+        {% assign color_index = null %}
         {% for option in current_product.options_with_values %}
           {% if option.name == 'Color' %}
             {% assign color_index = forloop.index0 %}
           {% endif %}
         {% endfor %}
 
-        {% assign colors_string = '' %}
-
+        {% assign unique_colors = '' %}
         {% for variant in current_product.variants %}
-          {% assign colors_string = colors_string | append: variant.options[color_index] | append: ',' %}
+          {% assign color = variant.options[color_index] %}
+          {% unless unique_colors contains color %}
+            {% assign unique_colors = unique_colors | append: color | append: ',' %}
+          {% endunless %}
         {% endfor %}
+        {% assign colors = unique_colors | split: ',' | uniq %}
 
-        {% assign colors = colors_string | split: ',' | uniq %}
-
-        <ul>
+        <div class="color-options">
           {% for color in colors limit: 3 %}
-            {% assign available = false %}
+            {% assign total_qty = 0 %}
+            {% assign variant_id = '' %}
+            {% assign has_stock = false %}
 
             {% for variant in current_product.variants %}
-              {% if variant.options[color_index] == color and variant.available %}
-                {% assign available = true %}
+              {% if variant.options[color_index] == color %}
+                {% assign total_qty = total_qty | plus: variant.inventory_quantity %}
+                {% if variant.inventory_quantity > 0 %}
+                  {% assign has_stock = true %}
+                {% endif %}
+                {% if variant_id == '' %}
+                  {% assign variant_id = variant.id %}
+                {% endif %}
               {% endif %}
             {% endfor %}
 
-            <li>
-              {{ color }}
-              {% if available %}
-                <span style="color:green">(є в наявності)</span>
-              {% else %}
-                <span style="color:red">(нема)</span>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
+            {% capture price_html %}
+              {% for variant in current_product.variants %}
+                {% if variant.id == variant_id %}
+                  {% if variant.compare_at_price > variant.price %}
+                    <span class="price">{{ variant.price | money_without_trailing_zeros }}</span>
+                    <span class="price--compare" style="text-decoration:line-through;color:#888;">
+                      {{ variant.compare_at_price | money_without_trailing_zeros }}
+                    </span>
+                  {% else %}
+                    <span class="price">{{ variant.price | money_without_trailing_zeros }}</span>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endcapture %}
 
-        {% for color in current_product.options_by_name.color.values %}
-          <div class="color-container " data-index="0">
-            <img
-              class="color-img"
-              src="./assets/products/colors-products/black/image1.jpg"
-              alt="Choose color {{color}}"
-              width="100"
-              height="200"
+            <button
+              class="color-button"
+              data-color="{{ color }}"
+              data-stock-text="
+                {% if has_stock %}
+                  {{ 'sections.product_banner.available'| t: default: 'Доступно:' }} {{total_qty}}
+                {% else %}
+                  {{ 'sections.product_banner.unavailable' | t: default: 'Недоступно'}}
+                {% endif %}
+              "
+              data-available="{{ has_stock }}"
+              data-price-html="{{ price_html | escape }}"
             >
-          </div>
-        {% endfor %}
-      </div>
-      <h3 class="product-card__info-sizes__title text-body-medium">Select Size:</h3>
-      <div class="product-card__info-sizes" role="group" aria-label="Available sizes" data-selected-size="UK 5.5">
-        {% for size in current_product.options_by_name['Shoe size'].values %}
-          <button
-            class="product-card__size-btn"
-            data-size="{{ size }}"
-            aria-label="Choose size {{ size }}"
-            aria-selected="true"
-            {% unless size %}
-              disabled
-            {% endunless %}
-          >
-            {{ size }}
-          </button>
-        {% endfor %}
-      </div>
+              {{ color }}
+            </button>
+          {% endfor %}
+        </div>
 
-      <button class="button button--dark button--xl add-to-bag-btn" type="button" aria-label="Add product to bag">
-        Add To Bag
+        <div id="stock-info" style="margin-top: 10px; font-weight: bold;"></div>
+      {% endif %}
+
+      {% if current_product.options_by_name['Shoe size'] %}
+        <h3 class="product-card__info-sizes__title text-body-medium">
+          {{ 'sections.product_banner.select_size' | t: default: 'Оберіть розмір:' }}
+        </h3>
+        <div class="product-card__info-sizes" role="group">
+          {% for size in current_product.options_by_name['shoe size'].values %}
+            <button class="product-card__size-btn" data-size="{{ size }}">
+              {{ size }}
+            </button>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <button class="button button--dark button--xl add-to-bag-btn" type="button">
+        {{ 'sections.product_banner.add_to_bag' | t: default: 'Додати в кошик' }}
       </button>
+
       <p class="product-card__description">
-        {{ current_product.description }}
+        {{ current_product.description | default: '' }}
       </p>
     </div>
   </div>
@@ -162,11 +151,19 @@
 {% schema %}
 {
   "name": "Product Banner",
+  "tag": "section",
   "settings": [
     {
       "type": "product",
       "id": "product_handle",
-      "label": "Select product for banner"
+      "label": "Handle продукту (fallback)",
+      "info": "Pass the product handle if it is not passed automatically via the product variable."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Banner",
+      "category": "Product"
     }
   ]
 }

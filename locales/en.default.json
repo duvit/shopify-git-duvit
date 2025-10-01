@@ -359,6 +359,15 @@
     "page": {
       "title": "Page title"
     },
+    "product_banner": {
+      "title": "Page title",
+      "error_no_product": "Unable to retrieve the product. Please verify that the handle is specified correctly in the section settings.",
+      "select_size": "Select Size",
+      "available_sizes": "Available sizes",
+      "add_to_bag": "Add to bag",
+      "available": "Available:",
+      "unavailable": "Unavailable"
+    },
     "quick_order_list": {
       "product_total": "Product subtotal",
       "view_cart": "View cart",
